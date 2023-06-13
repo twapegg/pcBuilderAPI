@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 const buildSchema = new mongoose.Schema({
   userId: {
-    type: Object.mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Part",
   },
   parts: [
     {
