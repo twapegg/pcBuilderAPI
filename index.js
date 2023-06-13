@@ -12,7 +12,7 @@ mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    dbName: "eCommerceAPI",
+    dbName: process.env.DB_NAME,
   })
   .then(() => {
     console.log("MongoDB connected");
@@ -20,6 +20,8 @@ mongoose
   .catch((err) => {
     console.log(err);
   });
+
+app.use("/users", require("./routes/userRoute"));
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
