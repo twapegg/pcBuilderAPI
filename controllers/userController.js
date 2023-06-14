@@ -39,7 +39,7 @@ module.exports.loginUser = async (req, res) => {
   try {
     // Check if user exists
     if (
-      User.findOne({ email: req.body.email }).then((result) => {
+      await User.findOne({ email: req.body.email }).then((result) => {
         if (result) {
           const password = bcrypt.compareSync(
             req.body.password,
@@ -57,22 +57,51 @@ module.exports.loginUser = async (req, res) => {
   }
 };
 
-// Purchase a build
-module.exports.purchaseBuild = async (req, res) => {
+// Set user as admin
+module.exports.setAdmin = async (req, res) => {
   try {
-    const { user } = req;
-    const build = await Build.findById(req.body.buildId);
+    const admin = await auth.decode(req.headers.authorization);
+    const user = await User.findById(req.params.id);
 
-    if (!build) {
-      return res.status(404).send("Build not found");
+    if (!admin.isAdmin) {
+      return res.status(401).send("Unauthorized. Must be an admin");
     }
 
-    if (user.builds.includes(build._id)) {
-      return res.status(400).send("Build already purchased");
+    if (user.isAdmin) {
+      return res.status(400).send("User is already an admin");
     }
 
-    await user.builds.push({ builds: build._id });
-    return res.status(200).send("Purchase successful");
+    return user.updateOne({ isAdmin: true }).then((result) => {
+      res.send("User set to admin");
+    });
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+};
+
+// Check user details
+module.exports.checkUserDetails = async (req, res) => {
+  try {
+    const user = auth.decode(req.headers.authorization);
+
+    return User.findById(user.id)
+      .select("-password")
+      .then((result) => {
+        res.send(result);
+      });
+  } catch (err) {
+    return res.send(err);
+  }
+};
+
+// Retrieve authenticated user's builds
+module.exports.getUserBuilds = async (req, res) => {
+  try {
+    const user = auth.decode(req.headers.authorization);
+
+    const builds = await Build.find({ user: user.id });
+
+    return res.send(builds);
   } catch (err) {
     return res.send(err);
   }
