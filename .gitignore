@@ -1,4 +1,6 @@
 node_modules
 .env
 requestsUser.rest
-
+requestsBuild.rest
+requestsCart.rest
+requestsPart.rest
