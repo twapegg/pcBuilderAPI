@@ -6,7 +6,7 @@ module.exports.createToken = (user) => {
     user: {
       id: user.id,
       email: user.email,
-      name: user.name,
+      isAdmin: user.isAdmin,
     },
   };
 
