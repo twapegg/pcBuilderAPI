@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
-const buildSchema = new mongoose.Schema({
+const cartSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Part",
+    ref: "User",
   },
   parts: [
     {
@@ -27,14 +27,18 @@ const buildSchema = new mongoose.Schema({
       },
     },
   ],
+  status: {
+    type: String,
+    default: "active",
+  },
   totalAmount: {
     type: Number,
     default: 0,
   },
-  purchasedOn: {
+  createdOn: {
     type: Date,
     default: Date.now,
   },
 });
 
-module.exports = mongoose.model("Build", buildSchema);
+module.exports = mongoose.model("Cart", cartSchema);

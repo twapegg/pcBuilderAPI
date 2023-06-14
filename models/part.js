@@ -22,7 +22,11 @@ const partSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  inStock: {
+  stock: {
+    type: Number,
+    default: 0,
+  },
+  isAvailable: {
     type: Boolean,
     default: true,
   },
