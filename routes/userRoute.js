@@ -17,7 +17,16 @@ router.patch("/admin/:id", auth.verifyToken, userController.setAdmin);
 // Check user details
 router.get("/me", auth.verifyToken, userController.checkUserDetails);
 
+// Retrieve authenticated user's current cart
+router.get("/me/cart", auth.verifyToken, userController.getUserCart);
+
 // Retrieve authenticated user's builds
 router.get("/me/builds", auth.verifyToken, userController.getUserBuilds);
+
+// Update user password
+router.patch("/me/password", auth.verifyToken, userController.updateUserPassword);
+
+// Delete user (admin only)
+router.delete("/:id", auth.verifyToken, userController.deleteUser);
 
 module.exports = router;

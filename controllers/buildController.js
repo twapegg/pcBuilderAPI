@@ -1,10 +1,17 @@
 const Build = require("../models/build");
+const Cart = require("../models/cart");
 const Part = require("../models/part");
 const auth = require("../middleware/auth");
 
-// Get all Builds
+// Get all Builds (admin only)
 module.exports.getAllBuilds = async (req, res) => {
   try {
+    const user = auth.decode(req.headers.authorization);
+
+    if (!user.isAdmin) {
+      return res.status(401).send("Unauthorized");
+    }
+
     await Build.find().then((result) => {
       res.status(200).send(result);
     });
@@ -17,52 +24,70 @@ module.exports.getAllBuilds = async (req, res) => {
 // Create build
 module.exports.createBuild = async (req, res) => {
   try {
-  const { userId, parts } = req.body;
+    const { userId } = req.body;
+    const user = auth.decode(req.headers.authorization);
 
-  // List all part ids from the request
-  const partIds = parts.map((part) => part.partId);
-
-  // Find all parts from the database
-  const partList = await Part.find({ _id: { $in: partIds } });
-
-  // Initialize parts property for build
-  const buildParts = [];
-
-  // Loop through all parts from the database
-  for (let i = 0; i < partList.length; i++) {
-    const partId = parts[i].partId;
-    const partQuantity = parts[i].quantity;
-    const part = partList.find((part) => part._id.toString() === partId);
-
-    if (!part) {
-      // Check if part is not found
-      return res.status(404).send(`Part with ID ${partId} not found`);
+    if (user.id !== userId) {
+      return res.status(401).send("Unauthorized");
     }
 
-    buildParts.push({
-      partId: part._id,
-      name: part.name,
-      type: part.type,
-      quantity: partQuantity,
-      price: part.price,
+    // Find the cart
+    const cart = await Cart.findOne({
+      userId,
+      status: "active",
     });
-  }
 
-    const totalSum = buildParts.reduce((sum, part) => {
-      return sum + part.price * part.quantity;
-    }, 0);
+    if (!cart) {
+      return res.status(404).send("Cart not found");
+    }
 
+    // Check if cart is empty
+    if (cart.parts.length === 0) {
+      return res.status(400).send("Cart is empty");
+    }
+
+    // Update the stock of the parts
+    for (let i = 0; i < cart.parts.length; i++) {
+      const part = await Part.findById(cart.parts[i].partId);
+      part.stock -= cart.parts[i].quantity;
+      await part.save();
+    }
+
+    // Update the cart status
+    cart.status = "completed";
+    await cart.save();
+
+    // Create new build
     const build = new Build({
       userId,
-      parts: buildParts,
-      totalAmount: totalSum,
+      parts: cart.parts,
+      totalAmount: cart.totalAmount,
     });
 
-    await build.save();
-    return res.send(build);
+    // Save the build
+    return await build.save().then((result) => {
+      res.status(200).send(result);
+    });
   } catch (err) {
-    console.error(err);
-    return res.status(500).send("Internal Server Error");
+    res.status(500).json({ message: err.message });
   }
 };
 
+// Delete build
+module.exports.deleteBuild = async (req, res) => {
+  try {
+    const user = auth.decode(req.headers.authorization);
+
+    if (!user.isAdmin) {
+      return res.status(403).send("Unauthorized. Must be an admin");
+    }
+
+    const { id } = req.params;
+
+    return await Build.findByIdAndDelete(id).then((result) => {
+      res.status(200).send(result);
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

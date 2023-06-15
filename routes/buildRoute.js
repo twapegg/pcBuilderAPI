@@ -7,5 +7,7 @@ router.get("/", buildController.getAllBuilds);
 // Create a build
 router.post("/", buildController.createBuild);
 
+// Delete a build
+router.delete("/:id", buildController.deleteBuild);
 
 module.exports = router;
